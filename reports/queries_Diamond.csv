@@ -1,0 +1,6 @@
+Query,Evidence,P(Win=1),P(Win=0)
+High Baron and Gold Advantage,"{'Baron': '1', 'Gold20': 'high'}",,
+Infernal Soul with Low Gold,"{'Soul': 'Infernal', 'Gold20': 'low'}",,
+"Multiple Drakes, First Tower, and Tower Advantage","{'Drakes': '3', 'FT': 1, 'Towers': '>=2'}",,
+First Blood Only,{'FB': 1},,
+Baron and Soul,"{'Baron': '1', 'Soul': 'Mountain'}",,
