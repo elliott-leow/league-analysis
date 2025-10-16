@@ -1,8 +1,3 @@
-"""
-Parameter learning module for Bayesian networks.
-
-Estimates conditional probability tables (CPTs) for learned structures.
-"""
 
 import pandas as pd
 import numpy as np
@@ -23,22 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 def create_bayesian_network(dag_edges: List[Tuple[str, str]], variables: List[str]) -> DiscreteBayesianNetwork:
-    """
-    Create a pgmpy DiscreteBayesianNetwork from DAG edges.
-    
-    Args:
-        dag_edges: List of directed edges (from, to)
-        variables: List of all variable names
-    
-    Returns:
-        DiscreteBayesianNetwork object
-    """
     logger.info(f"Creating Bayesian Network with {len(dag_edges)} edges")
     
-    # Create network
+    # create network
     model = DiscreteBayesianNetwork(dag_edges)
     
-    # Ensure all variables are added
+    # ensure all variables are added
     for var in variables:
         if var not in model.nodes():
             model.add_node(var)
@@ -53,21 +38,10 @@ def fit_cpts(
     data: pd.DataFrame,
     estimator_type: str = "BayesianEstimator"
 ) -> DiscreteBayesianNetwork:
-    """
-    Fit conditional probability tables to the network.
-    
-    Args:
-        model: DiscreteBayesianNetwork structure
-        data: Training data
-        estimator_type: 'MaximumLikelihoodEstimator' or 'BayesianEstimator'
-    
-    Returns:
-        DiscreteBayesianNetwork with fitted CPTs
-    """
     logger.info(f"Fitting CPTs using {estimator_type}")
     
     try:
-        # Ensure data only contains variables that are in the model
+        # ensure data only contains variables that are in the model
         model_vars = list(model.nodes())
         data_subset = data[model_vars].copy()
         
@@ -85,13 +59,13 @@ def fit_cpts(
         
         logger.info(f"CPT fitting completed. Created {len(model.get_cpds())} CPDs for {len(model_vars)} nodes")
         
-        # Verify all nodes have CPDs and create them for isolated nodes
+        # verify all nodes have CPDs and create them for isolated nodes
         nodes_with_cpds = {cpd.variable for cpd in model.get_cpds()}
         missing_cpds = set(model_vars) - nodes_with_cpds
         if missing_cpds:
             logger.warning(f"Missing CPDs for nodes: {missing_cpds}. Creating CPDs for isolated nodes...")
             for node in missing_cpds:
-                # Create marginal CPD for isolated node
+                # create marginal CPD for isolated node
                 node_data = data_subset[node]
                 cardinality = node_data.nunique()
                 values = node_data.value_counts(normalize=True).sort_index().values.reshape(-1, 1)
@@ -104,7 +78,7 @@ def fit_cpts(
                 model.add_cpds(cpd)
                 logger.info(f"Created marginal CPD for isolated node '{node}' with cardinality {cardinality}")
         
-        # Log CPD information
+        # log CPD information
         for cpd in model.get_cpds():
             logger.debug(f"CPT for {cpd.variable}: shape {cpd.cardinality}")
         
@@ -120,38 +94,26 @@ def learn_parameters_from_ges(
     data: pd.DataFrame,
     estimator_type: Optional[str] = None
 ) -> DiscreteBayesianNetwork:
-    """
-    Learn parameters from GES result.
-    
-    Args:
-        ges_result: Output from fit_ges
-        data: Training data
-        estimator_type: Type of estimator to use
-    
-    Returns:
-        DiscreteBayesianNetwork with learned parameters
-    """
     if estimator_type is None:
         estimator_type = CPT_PARAMS.get("estimator_type", "BayesianEstimator")
     
-    # Convert CPDAG to DAG
+    # convert CPDAG to DAG
     dag_edges = cpdag_to_dag(ges_result['edges'], ges_result['variables'])
     
-    # Create network
+    # create network
     model = create_bayesian_network(dag_edges, ges_result['variables'])
     
-    # Filter data to only include variables in the model
+    # filter data to only include variables in the model
     # (some may have been removed during structure learning due to zero variance)
     data_filtered = data[ges_result['variables']].copy()
     
-    # Fit CPTs
+    # fit CPTs
     model = fit_cpts(model, data_filtered, estimator_type)
     
     return model
 
 
 def save_bayesian_network(model: DiscreteBayesianNetwork, rank: str, output_dir: Optional[Path] = None):
-    """Save Bayesian network to file."""
     if output_dir is None:
         output_dir = MODELS_DIR
     
@@ -164,7 +126,6 @@ def save_bayesian_network(model: DiscreteBayesianNetwork, rank: str, output_dir:
 
 
 def load_bayesian_network(rank: str, models_dir: Optional[Path] = None) -> DiscreteBayesianNetwork:
-    """Load Bayesian network from file."""
     if models_dir is None:
         models_dir = MODELS_DIR
     
@@ -181,7 +142,6 @@ def load_bayesian_network(rank: str, models_dir: Optional[Path] = None) -> Discr
 
 
 def print_cpt_summary(model: DiscreteBayesianNetwork):
-    """Print summary of CPTs in the network."""
     print("\n" + "="*80)
     print("CONDITIONAL PROBABILITY TABLES SUMMARY")
     print("="*80)
@@ -192,18 +152,12 @@ def print_cpt_summary(model: DiscreteBayesianNetwork):
         print(f"  Cardinality: {cpd.cardinality}")
         print(f"  Table shape: {cpd.values.shape}")
         
-        # Print small CPTs in full
+        # print small CPTs in full
         if cpd.values.size <= 50:
             print(f"\n{cpd}")
 
 
 def get_marginal_probabilities(model: DiscreteBayesianNetwork) -> Dict[str, pd.Series]:
-    """
-    Get marginal probabilities for all variables.
-    
-    Returns:
-        Dictionary mapping variable names to probability distributions
-    """
     from pgmpy.inference import VariableElimination
     
     inference = VariableElimination(model)
@@ -220,12 +174,6 @@ def get_marginal_probabilities(model: DiscreteBayesianNetwork) -> Dict[str, pd.S
 
 
 def validate_cpts(model: DiscreteBayesianNetwork) -> Dict[str, any]:
-    """
-    Validate CPTs for consistency.
-    
-    Returns:
-        Dictionary with validation results
-    """
     results = {
         "valid": True,
         "errors": [],
@@ -233,7 +181,7 @@ def validate_cpts(model: DiscreteBayesianNetwork) -> Dict[str, any]:
     }
     
     for cpd in model.get_cpds():
-        # Check if probabilities sum to 1
+        # check if probabilities sum to 1
         prob_sums = cpd.values.sum(axis=0)
         
         if not np.allclose(prob_sums, 1.0, atol=1e-5):
@@ -242,14 +190,14 @@ def validate_cpts(model: DiscreteBayesianNetwork) -> Dict[str, any]:
             )
             results["valid"] = False
         
-        # Check for NaN or infinite values
+        # check for NaN or infinite values
         if np.any(np.isnan(cpd.values)) or np.any(np.isinf(cpd.values)):
             results["errors"].append(
                 f"CPT for {cpd.variable} contains NaN or infinite values"
             )
             results["valid"] = False
         
-        # Check for zero probabilities (warning)
+        # check for zero probabilities (warning)
         if np.any(cpd.values == 0):
             results["warnings"].append(
                 f"CPT for {cpd.variable} contains zero probabilities"

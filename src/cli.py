@@ -1,9 +1,3 @@
-"""
-Command-line interface for the LOL Bayesian Network project.
-
-Provides commands for preprocessing, structure learning, parameter learning,
-comparison, and querying.
-"""
 
 import argparse
 import sys
@@ -21,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 def cmd_preprocess(args):
-    """Preprocess data for structure learning."""
     logger.info("Starting preprocessing")
     
     if args.rank == "all":
@@ -39,16 +32,15 @@ def cmd_preprocess(args):
 
 
 def cmd_learn(args):
-    """Learn graph structure using GES."""
     
-    # Handle "all" ranks
+    # handle "all" ranks
     if args.rank == "all":
         logger.info("Learning structure for all ranks")
         for rank in ALL_RANKS:
             logger.info(f"\n{'='*50}")
             logger.info(f"Processing rank: {rank}")
             logger.info(f"{'='*50}")
-            # Create a copy of args with specific rank
+            # create a copy of args with specific rank
             rank_args = argparse.Namespace(**vars(args))
             rank_args.rank = rank
             cmd_learn(rank_args)
@@ -56,25 +48,25 @@ def cmd_learn(args):
     
     logger.info(f"Learning structure for rank: {args.rank}")
     
-    # Validate rank
+    # validate rank
     if args.rank not in ALL_RANKS:
         logger.error(f"Invalid rank: {args.rank}. Choose from {ALL_RANKS}")
         return
     
-    # Load data
+    # load data
     try:
         data = preprocessing.load_processed_data(args.rank)
     except FileNotFoundError:
         logger.error(f"Processed data not found for {args.rank}. Run preprocessing first.")
         return
     
-    # Run GES
+    # run GES
     result = ges.fit_ges(data, use_constraints=not args.no_constraints)
     
-    # Save result
+    # save result
     ges.save_ges_result(result, args.rank)
     
-    # Create visualization
+    # create visualization
     output_file = FIGURES_DIR / f"cpdag_{args.rank}.png"
     visualize.plot_cpdag(
         result['edges'],
@@ -84,7 +76,7 @@ def cmd_learn(args):
         layout=args.layout
     )
     
-    # Save DOT file
+    # save DOT file
     dot_file = FIGURES_DIR / f"cpdag_{args.rank}.dot"
     visualize.save_graph_as_dot(
         result['edges'],
@@ -98,16 +90,15 @@ def cmd_learn(args):
 
 
 def cmd_params(args):
-    """Learn parameters (CPTs) for a learned structure."""
     
-    # Handle "all" ranks
+    # handle "all" ranks
     if args.rank == "all":
         logger.info("Learning parameters for all ranks")
         for rank in ALL_RANKS:
             logger.info(f"\n{'='*50}")
             logger.info(f"Processing rank: {rank}")
             logger.info(f"{'='*50}")
-            # Create a copy of args with specific rank
+            # create a copy of args with specific rank
             rank_args = argparse.Namespace(**vars(args))
             rank_args.rank = rank
             cmd_params(rank_args)
@@ -115,32 +106,32 @@ def cmd_params(args):
     
     logger.info(f"Learning parameters for rank: {args.rank}")
     
-    # Validate rank
+    # validate rank
     if args.rank not in ALL_RANKS:
         logger.error(f"Invalid rank: {args.rank}. Choose from {ALL_RANKS}")
         return
     
-    # Load data
+    # load data
     try:
         data = preprocessing.load_processed_data(args.rank)
     except FileNotFoundError:
         logger.error(f"Processed data not found for {args.rank}. Run preprocessing first.")
         return
     
-    # Load GES result
+    # load GES result
     try:
         ges_result = ges.load_ges_result(args.rank)
     except FileNotFoundError:
         logger.error(f"GES result not found for {args.rank}. Run structure learning first.")
         return
     
-    # Learn parameters
+    # learn parameters
     model = parameters.learn_parameters_from_ges(ges_result, data)
     
-    # Save model
+    # save model
     parameters.save_bayesian_network(model, args.rank)
     
-    # Validate
+    # validate
     validation = parameters.validate_cpts(model)
     if validation["valid"]:
         logger.info("CPTs validated successfully")
@@ -154,10 +145,9 @@ def cmd_params(args):
 
 
 def cmd_compare(args):
-    """Compare structures across ranks."""
     logger.info("Comparing structures across ranks")
     
-    # Load all GES results
+    # load all GES results
     graphs_by_rank = {}
     
     ranks_to_compare = args.ranks if args.ranks else ALL_RANKS
@@ -174,29 +164,29 @@ def cmd_compare(args):
         logger.error("Need at least 2 ranks to compare")
         return
     
-    # Compare
+    # compare
     comparison = compare.compare_edges(graphs_by_rank)
     
-    # Save comparison report
+    # save comparison report
     output_file = REPORTS_DIR / "structure_comparison.md"
     compare.save_comparison_results(comparison, output_file)
     
-    # Create comparison table
+    # create comparison table
     table = compare.create_edge_comparison_table(graphs_by_rank)
     table_file = REPORTS_DIR / "edge_comparison_table.csv"
     table.to_csv(table_file, index=False)
     logger.info(f"Saved edge comparison table to {table_file}")
     
-    # Create visualization
+    # create visualization
     if args.visualize:
-        # Get all variables
+        # get all variables
         all_vars = list(set(v for edges in graphs_by_rank.values() 
                            for v1, v2, _ in edges for v in [v1, v2]))
         
         viz_file = FIGURES_DIR / "rank_comparison.png"
         visualize.plot_rank_comparison(graphs_by_rank, all_vars, viz_file)
         
-        # Edge frequency plot
+        # edge frequency plot
         freq_file = FIGURES_DIR / "edge_frequency.png"
         visualize.plot_edge_frequency(
             comparison['edge_frequency'],
@@ -208,10 +198,9 @@ def cmd_compare(args):
 
 
 def cmd_query(args):
-    """Run probabilistic queries."""
     logger.info(f"Running query for rank: {args.rank}")
     
-    # Load model
+    # load model
     try:
         model = parameters.load_bayesian_network(args.rank)
     except FileNotFoundError:
@@ -219,23 +208,23 @@ def cmd_query(args):
         return
     
     if args.example:
-        # Run example queries
+        # run example queries
         from .config import EXAMPLE_QUERIES
         results = queries.run_example_queries(model, args.rank)
         
-        # Save results
+        # save results
         output_file = REPORTS_DIR / f"queries_{args.rank}.csv"
         results.to_csv(output_file, index=False)
         logger.info(f"Saved query results to {output_file}")
     
     elif args.evidence:
-        # Parse evidence
+        # parse evidence
         evidence = {}
         for item in args.evidence.split(','):
             key, value = item.split('=')
             evidence[key.strip()] = value.strip()
         
-        # Run query
+        # run query
         prob = queries.p_win_given(evidence, model)
         
         print(f"\n{'='*60}")
@@ -251,7 +240,6 @@ def cmd_query(args):
 
 
 def cmd_report(args):
-    """Generate comprehensive report."""
     logger.info("Generating comprehensive report")
     
     from .config import EXAMPLE_QUERIES
@@ -262,10 +250,10 @@ def cmd_report(args):
     md.append("This report summarizes the Bayesian network structures learned from ")
     md.append("League of Legends match data across different rank tiers.\n\n")
     
-    # For each rank
+    # for each rank
     for rank in ALL_RANKS:
         try:
-            # Load GES result
+            # load GES result
             ges_result = ges.load_ges_result(rank)
             
             md.append(f"### {rank}\n\n")
@@ -277,11 +265,11 @@ def cmd_report(args):
                 md.append(f"- {from_var} {symbol} {to_var}\n")
             md.append("\n")
             
-            # Add figure
+            # add figure
             fig_path = f"figures/cpdag_{rank}.png"
             md.append(f"![{rank} CPDAG]({fig_path})\n\n")
             
-            # Run queries if model exists
+            # run queries if model exists
             try:
                 model = parameters.load_bayesian_network(rank)
                 
@@ -296,10 +284,10 @@ def cmd_report(args):
             logger.warning(f"GES result not found for {rank}. Skipping.")
             continue
     
-    # Add comparison section
+    # add comparison section
     md.append("## Structural Comparison\n\n")
     
-    # Read comparison file if it exists
+    # read comparison file if it exists
     comparison_file = REPORTS_DIR / "structure_comparison.md"
     if comparison_file.exists():
         with open(comparison_file, 'r') as f:
@@ -307,7 +295,7 @@ def cmd_report(args):
     else:
         md.append("*Run comparison analysis first (`python -m src.cli compare`)*\n\n")
     
-    # Save report
+    # save report
     output_file = REPORTS_DIR / "lol_ges_report.md"
     with open(output_file, 'w') as f:
         f.write("".join(md))
@@ -316,7 +304,6 @@ def cmd_report(args):
 
 
 def cmd_full_pipeline(args):
-    """Run the full pipeline for specified ranks."""
     logger.info("Running full pipeline")
     
     ranks_to_process = args.ranks if args.ranks else ALL_RANKS
@@ -326,36 +313,36 @@ def cmd_full_pipeline(args):
         logger.info(f"Processing rank: {rank}")
         logger.info(f"{'='*60}\n")
         
-        # Preprocessing
+        # preprocessing
         logger.info("Step 1/4: Preprocessing")
         args.rank = rank
         args.sample_size = SAMPLE_SIZE
         cmd_preprocess(args)
         
-        # Structure learning
+        # structure learning
         logger.info("Step 2/4: Structure learning")
         args.no_constraints = False
         args.layout = "hierarchical"
         cmd_learn(args)
         
-        # Parameter learning
+        # parameter learning
         logger.info("Step 3/4: Parameter learning")
         args.verbose = False
         cmd_params(args)
         
-        # Example queries
+        # example queries
         logger.info("Step 4/4: Example queries")
         args.example = True
         args.evidence = None
         cmd_query(args)
     
-    # Compare
+    # compare
     logger.info("\nStep 5/5: Comparing structures")
     args.ranks = ranks_to_process
     args.visualize = True
     cmd_compare(args)
     
-    # Generate report
+    # generate report
     logger.info("\nStep 6/5: Generating report")
     cmd_report(args)
     
@@ -365,7 +352,6 @@ def cmd_full_pipeline(args):
 
 
 def main():
-    """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="League of Legends Bayesian Network Structure Learning",
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -373,7 +359,7 @@ def main():
     
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     
-    # Preprocess command
+    # preprocess command
     parser_preprocess = subparsers.add_parser('preprocess', help='Preprocess match data')
     parser_preprocess.add_argument(
         '--rank',
@@ -388,33 +374,33 @@ def main():
         help='Sample size for development (None = all data)'
     )
     
-    # Learn command
+    # learn command
     parser_learn = subparsers.add_parser('learn', help='Learn graph structure with GES')
     parser_learn.add_argument('--rank', type=str, required=True, help='Rank to learn')
     parser_learn.add_argument('--no-constraints', action='store_true', help='Disable domain constraints')
     parser_learn.add_argument('--layout', type=str, default='hierarchical', 
                             choices=['hierarchical', 'spring'], help='Graph layout')
     
-    # Params command
+    # params command
     parser_params = subparsers.add_parser('params', help='Learn CPT parameters')
     parser_params.add_argument('--rank', type=str, required=True, help='Rank to learn')
     parser_params.add_argument('--verbose', action='store_true', help='Print CPT details')
     
-    # Compare command
+    # compare command
     parser_compare = subparsers.add_parser('compare', help='Compare structures across ranks')
     parser_compare.add_argument('--ranks', nargs='+', help='Ranks to compare (default: all)')
     parser_compare.add_argument('--visualize', action='store_true', help='Create visualizations')
     
-    # Query command
+    # query command
     parser_query = subparsers.add_parser('query', help='Run probabilistic queries')
     parser_query.add_argument('--rank', type=str, required=True, help='Rank to query')
     parser_query.add_argument('--example', action='store_true', help='Run example queries')
     parser_query.add_argument('--evidence', type=str, help='Evidence in format: Var1=val1,Var2=val2')
     
-    # Report command
+    # report command
     parser_report = subparsers.add_parser('report', help='Generate comprehensive report')
     
-    # Full pipeline command
+    # full pipeline command
     parser_full = subparsers.add_parser('full', help='Run full pipeline')
     parser_full.add_argument('--ranks', nargs='+', help='Ranks to process (default: all)')
     
@@ -424,7 +410,7 @@ def main():
         parser.print_help()
         return
     
-    # Dispatch to appropriate command
+    # dispatch to appropriate command
     try:
         if args.command == 'preprocess':
             cmd_preprocess(args)

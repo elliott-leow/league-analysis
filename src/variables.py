@@ -1,23 +1,16 @@
-"""
-Variable definitions and schema for Bayesian network nodes.
-
-Defines the discrete variables that will be used as nodes in the BN.
-"""
-
 from typing import Dict, List, Any
 from dataclasses import dataclass
 
 
 @dataclass
 class Variable:
-    """Represents a discrete variable in the Bayesian network."""
     name: str
     description: str
     values: List[str]
     temporal_order: int  # 0=early, 1=mid, 2=late, 3=outcome
 
 
-# Variable schema
+# variable schema
 VARIABLE_SCHEMA = {
     "FB": Variable(
         name="FB",
@@ -101,17 +94,14 @@ VARIABLE_SCHEMA = {
 
 
 def get_variable_info(var_name: str) -> Variable:
-    """Get information about a variable."""
     return VARIABLE_SCHEMA[var_name]
 
 
 def get_all_variables() -> List[str]:
-    """Get list of all variable names."""
     return list(VARIABLE_SCHEMA.keys())
 
 
 def get_variables_by_temporal_order() -> Dict[int, List[str]]:
-    """Group variables by temporal order."""
     groups = {}
     for name, var in VARIABLE_SCHEMA.items():
         order = var.temporal_order
@@ -122,7 +112,6 @@ def get_variables_by_temporal_order() -> Dict[int, List[str]]:
 
 
 def validate_variable_values(var_name: str, value: Any) -> bool:
-    """Check if a value is valid for a given variable."""
     var = VARIABLE_SCHEMA.get(var_name)
     if var is None:
         return False
@@ -130,25 +119,19 @@ def validate_variable_values(var_name: str, value: Any) -> bool:
 
 
 def get_temporal_order(var_name: str) -> int:
-    """Get the temporal order of a variable."""
     return VARIABLE_SCHEMA[var_name].temporal_order
 
 
 def can_edge_exist(from_var: str, to_var: str) -> bool:
-    """
-    Check if an edge from from_var to to_var is temporally valid.
-    
-    Rules:
-    - Win cannot be a parent of any other variable
-    - Variables can only influence variables at the same or later temporal order
-    """
+    # win cannot be a parent of any other variable
+    # variables can only influence variables at the same or later temporal order
     if from_var == "Win":
         return False
     
     from_order = get_temporal_order(from_var)
     to_order = get_temporal_order(to_var)
     
-    # Can only go forward or stay at same time
+    # can only go forward or stay at same time
     return from_order <= to_order
 
 

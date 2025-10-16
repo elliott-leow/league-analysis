@@ -1,8 +1,3 @@
-"""
-Visualization module for Bayesian networks.
-
-Creates visualizations of learned graph structures and comparisons across ranks.
-"""
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -21,22 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 def create_networkx_graph(edges: List[Tuple[str, str, str]]) -> nx.DiGraph:
-    """
-    Create a NetworkX directed graph from edge list.
-    
-    Args:
-        edges: List of (from, to, edge_type) tuples
-    
-    Returns:
-        NetworkX DiGraph
-    """
     G = nx.DiGraph()
     
     for from_var, to_var, edge_type in edges:
         if edge_type == 'directed':
             G.add_edge(from_var, to_var)
         elif edge_type == 'undirected':
-            # Add both directions for undirected (will style differently)
+            # add both directions for undirected (will style differently)
             G.add_edge(from_var, to_var, bidirectional=True)
             G.add_edge(to_var, from_var, bidirectional=True)
     
@@ -44,17 +30,7 @@ def create_networkx_graph(edges: List[Tuple[str, str, str]]) -> nx.DiGraph:
 
 
 def get_hierarchical_layout(G: nx.DiGraph, variables: List[str]) -> Dict[str, Tuple[float, float]]:
-    """
-    Create a hierarchical layout based on temporal ordering.
-    
-    Args:
-        G: NetworkX graph
-        variables: List of variable names
-    
-    Returns:
-        Dictionary mapping nodes to (x, y) positions
-    """
-    # Group variables by temporal order
+    # group variables by temporal order
     temporal_groups = {}
     for var in G.nodes():
         order = get_temporal_order(var)
@@ -83,22 +59,9 @@ def plot_cpdag(
     output_file: Optional[Path] = None,
     layout: str = "hierarchical"
 ) -> plt.Figure:
-    """
-    Plot a CPDAG (Completed Partially Directed Acyclic Graph).
-    
-    Args:
-        edges: List of edges
-        variables: List of variable names
-        title: Plot title
-        output_file: Optional output file path
-        layout: Layout algorithm ('hierarchical' or 'spring')
-    
-    Returns:
-        Matplotlib figure
-    """
     logger.info(f"Plotting CPDAG: {title}")
     
-    # Create graph
+    # create graph
     G = nx.DiGraph()
     G.add_nodes_from(variables)
     
@@ -109,26 +72,26 @@ def plot_cpdag(
         if edge_type == 'directed':
             directed_edges.append((from_var, to_var))
         elif edge_type == 'undirected':
-            # Store as sorted tuple to avoid duplicates
+            # store as sorted tuple to avoid duplicates
             pair = tuple(sorted([from_var, to_var]))
             undirected_pairs.add(pair)
     
-    # Add directed edges
+    # add directed edges
     G.add_edges_from(directed_edges)
     
-    # Create figure
+    # create figure
     fig, ax = plt.subplots(
         figsize=VIZ_PARAMS["figure_size"],
         dpi=VIZ_PARAMS["dpi"]
     )
     
-    # Get layout
+    # get layout
     if layout == "hierarchical":
         pos = get_hierarchical_layout(G, variables)
     else:
         pos = nx.spring_layout(G, k=2, iterations=50, seed=42)
     
-    # Draw nodes
+    # draw nodes
     nx.draw_networkx_nodes(
         G, pos,
         node_color='lightblue',
@@ -136,7 +99,7 @@ def plot_cpdag(
         ax=ax
     )
     
-    # Draw directed edges with better arrow visibility
+    # draw directed edges with better arrow visibility
     nx.draw_networkx_edges(
         G, pos,
         edgelist=directed_edges,
@@ -152,13 +115,13 @@ def plot_cpdag(
         ax=ax
     )
     
-    # Draw undirected edges (no arrows)
+    # draw undirected edges (no arrows)
     for node1, node2 in undirected_pairs:
         x1, y1 = pos[node1]
         x2, y2 = pos[node2]
         ax.plot([x1, x2], [y1, y2], 'b--', linewidth=VIZ_PARAMS["edge_width"], alpha=0.6)
     
-    # Draw labels
+    # draw labels
     nx.draw_networkx_labels(
         G, pos,
         font_size=VIZ_PARAMS["font_size"],
@@ -166,7 +129,7 @@ def plot_cpdag(
         ax=ax
     )
     
-    # Add legend
+    # add legend
     directed_patch = mpatches.Patch(color='black', label='Directed edge (→)')
     undirected_patch = mpatches.Patch(color='blue', label='Undirected edge (--)')
     ax.legend(handles=[directed_patch, undirected_patch], loc='upper right')
@@ -176,7 +139,7 @@ def plot_cpdag(
     
     plt.tight_layout()
     
-    # Save if output file specified
+    # save if output file specified
     if output_file:
         fig.savefig(output_file, dpi=VIZ_PARAMS["dpi"], bbox_inches='tight')
         logger.info(f"Saved figure to {output_file}")
@@ -189,17 +152,6 @@ def plot_rank_comparison(
     variables: List[str],
     output_file: Optional[Path] = None
 ) -> plt.Figure:
-    """
-    Plot side-by-side comparison of CPDAGs across ranks.
-    
-    Args:
-        rank_edges: Dictionary mapping rank names to edge lists
-        variables: List of variable names
-        output_file: Optional output file path
-    
-    Returns:
-        Matplotlib figure
-    """
     logger.info("Creating rank comparison plot")
     
     n_ranks = len(rank_edges)
@@ -221,17 +173,17 @@ def plot_rank_comparison(
     for idx, (rank, edges) in enumerate(rank_edges.items()):
         ax = axes[idx]
         
-        # Create graph
+        # create graph
         G = nx.DiGraph()
         G.add_nodes_from(variables)
         
         directed_edges = [(f, t) for f, t, et in edges if et == 'directed']
         G.add_edges_from(directed_edges)
         
-        # Layout
+        # layout
         pos = get_hierarchical_layout(G, variables)
         
-        # Draw
+        # draw
         nx.draw(
             G, pos,
             node_color='lightblue',
@@ -249,7 +201,7 @@ def plot_rank_comparison(
         ax.set_title(f"{rank} (n={len(edges)} edges)", fontsize=12, fontweight='bold')
         ax.axis('off')
     
-    # Hide extra subplots
+    # hide extra subplots
     for idx in range(n_ranks, len(axes)):
         axes[idx].axis('off')
     
@@ -268,23 +220,12 @@ def plot_edge_frequency(
     n_ranks: int,
     output_file: Optional[Path] = None
 ) -> plt.Figure:
-    """
-    Plot edge frequency across ranks.
-    
-    Args:
-        edge_freq: Dictionary mapping edges to frequency counts
-        n_ranks: Total number of ranks
-        output_file: Optional output file path
-    
-    Returns:
-        Matplotlib figure
-    """
     logger.info("Creating edge frequency plot")
     
-    # Sort by frequency
+    # sort by frequency
     sorted_edges = sorted(edge_freq.items(), key=lambda x: x[1], reverse=True)
     
-    # Take top 20
+    # take top 20
     top_edges = sorted_edges[:20]
     
     if not top_edges:
@@ -305,7 +246,7 @@ def plot_edge_frequency(
     ax.set_xlim(0, 1.0)
     ax.grid(axis='x', alpha=0.3)
     
-    # Add legend
+    # add legend
     green_patch = mpatches.Patch(color='green', label='Common (all ranks)')
     orange_patch = mpatches.Patch(color='orange', label='Frequent (≥50% ranks)')
     red_patch = mpatches.Patch(color='red', label='Rare (<50% ranks)')
@@ -325,17 +266,6 @@ def plot_variable_distributions(
     rank: str,
     output_file: Optional[Path] = None
 ) -> plt.Figure:
-    """
-    Plot distributions of discretized variables.
-    
-    Args:
-        data: Discretized data
-        rank: Rank name
-        output_file: Optional output file path
-    
-    Returns:
-        Matplotlib figure
-    """
     logger.info(f"Creating variable distribution plot for {rank}")
     
     from .variables import get_all_variables
@@ -361,7 +291,7 @@ def plot_variable_distributions(
         ax.tick_params(axis='x', rotation=45)
         ax.grid(axis='y', alpha=0.3)
     
-    # Hide extra subplots
+    # hide extra subplots
     for idx in range(n_vars, len(axes)):
         axes[idx].axis('off')
     
@@ -382,29 +312,19 @@ def save_graph_as_dot(
     title: str = "CPDAG",
     render_png: bool = True
 ):
-    """
-    Save graph as DOT file for Graphviz rendering.
-    
-    Args:
-        edges: List of edges
-        variables: List of variable names
-        output_file: Output file path
-        title: Graph title
-        render_png: Whether to also render as PNG using Graphviz
-    """
     with open(output_file, 'w') as f:
         f.write(f'digraph "{title}" {{\n')
         f.write('  rankdir=TB;\n')
         f.write('  node [shape=box, style=filled, fillcolor=lightblue, fontsize=12];\n')
         f.write('  edge [penwidth=2.0];\n\n')
         
-        # Add nodes
+        # add nodes
         for var in variables:
             f.write(f'  {var};\n')
         
         f.write('\n')
         
-        # Add edges
+        # add edges
         for from_var, to_var, edge_type in edges:
             if edge_type == 'directed':
                 f.write(f'  {from_var} -> {to_var} [arrowsize=1.5];\n')
@@ -415,7 +335,7 @@ def save_graph_as_dot(
     
     logger.info(f"Saved DOT file to {output_file}")
     
-    # Try to render with Graphviz if available and requested
+    # try to render with Graphviz if available and requested
     if render_png:
         try:
             import subprocess
