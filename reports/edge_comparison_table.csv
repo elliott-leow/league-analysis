@@ -1,5 +1,14 @@
 Edge,Diamond,Elite,Master,Platinum,Count
-Drakes -- Gold20,✓,✓,✓,✓,4
+Baron -- Inhibs,✓,✓,✓,✓,4
+Gold10 -- Herald,✓,✓,✓,✓,4
+Gold20 -- Kills20,✓,✓,✓,✓,4
 Gold20 -- Towers,✓,✓,✓,✓,4
-Baron -- Soul,,,✓,,1
-Drakes -- Towers,,✓,,,1
+Inhibs -- Win,✓,✓,✓,✓,4
+Kills20 -- Towers,✓,✓,✓,✓,4
+Kills20 -- Win,✓,✓,✓,✓,4
+Towers -- Win,✓,✓,✓,✓,4
+Gold10 -- Kills10,✓,,✓,✓,3
+Baron -- Soul,✓,,,✓,2
+Drakes -- Gold20,✓,,,✓,2
+Drakes -- Kills20,,,,✓,1
+Drakes -- Towers,,,✓,,1

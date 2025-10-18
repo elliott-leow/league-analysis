@@ -1,6 +1,9 @@
 Query,Evidence,P(Win=1),P(Win=0)
-High Baron and Gold Advantage,"{'Baron': '1', 'Gold20': 'high'}",,
-Infernal Soul with Low Gold,"{'Soul': 'Infernal', 'Gold20': 'low'}",,
+High Baron and Gold Advantage,"{'Baron': '1', 'Gold20': 'high'}",0.9574107376314444,0.04258926236855565
+Infernal Soul with Low Gold,"{'Soul': 'Infernal', 'Gold20': 'low'}",0.017517330444833352,0.9824826695551666
 "Multiple Drakes, First Tower, and Tower Advantage","{'Drakes': '3', 'FT': 1, 'Towers': '>=2'}",,
 First Blood Only,{'FB': 1},,
-Baron and Soul,"{'Baron': '1', 'Soul': 'Mountain'}",,
+Baron and Soul,"{'Baron': '1', 'Soul': 'Mountain'}",0.5184259001295605,0.48157409987043953
+Herald and Early Kill Lead,"{'Herald': '1', 'Kills10': 'ahead'}",0.4875585176922375,0.5124414823077625
+Behind in Kills but Strong Objectives,"{'Kills20': 'behind', 'Drakes': '3', 'Herald': '1'}",0.03518135060736151,0.9648186493926385
+Late Game Domination,"{'Baron': '1', 'Inhibs': '>=1', 'Soul': 'Infernal'}",0.5402183440544894,0.45978165594551057
